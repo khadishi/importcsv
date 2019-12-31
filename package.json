@@ -1,7 +1,7 @@
 {
   "name": "import-csv",
   "version": "1.0.0",
-  "description": "",
+  "description": "Parse server import csv function",
   "main": "index.js",
   "scripts": {},
   "keywords": [],

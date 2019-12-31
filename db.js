@@ -1,32 +1,11 @@
 const { MongoClient } = require('mongodb');
 
-class MongoDBClient {
-  constructor() {
-    if (MongoDBClient.instance) {
-      return MongoDBClient.instance;
-    }
+const keys = require('./keys');
 
-    MongoDBClient.instance = this;
+module.exports = new MongoClient(keys.mongoUri, {
+  useUnifiedTopology: true,
+  auth: {
+    user: keys.mongoUsername,
+    password: keys.mongoPassword
   }
-
-  async connect() {
-    try {
-      const connection = await new MongoClient(
-        process.env.PARSE_SERVER_DATABASE_URI,
-        {
-          useUnifiedTopology: true,
-          auth: {
-            user: process.env.PARSE_SERVER_DATABASE_USERNAME,
-            password: process.env.PARSE_SERVER_DATABASE_PASSWORD
-          }
-        }
-      ).connect();
-
-      this.db = connection.db();
-    } catch (err) {
-      console.log(err);
-    }
-  }
-}
-
-module.exports = MongoDBClient;
+});

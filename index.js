@@ -1,8 +1,6 @@
 const csvParse = require('csv-parse');
 
-const MongoDBClient = require('./db.js');
-
-const mongoDBClient = new MongoDBClient();
+const mongoClient = require('./db.js');
 
 function parseCsv(csv) {
   return new Promise((resolve, reject) => {
@@ -16,12 +14,11 @@ function parseCsv(csv) {
   });
 }
 
-Parse.Cloud.define('importcsv', async req => {
+module.exports = async req => {
   try {
     const { customClass, csvData } = req.params;
-    console.log(req.params);
 
-    if (!customClass.name || !customClass.schema || !csvData) {
+    if (!customClass || !customClass.name || !customClass.schema || !csvData) {
       return {
         success: false,
         message: 'Class name, schema and csv data are required'
@@ -38,7 +35,9 @@ Parse.Cloud.define('importcsv', async req => {
 
     await schema.save();
 
-    const newCollection = mongoDBClient.db.collection(customClass.name);
+    const connection = await mongoClient.connect();
+    const newCollection = connection.db().collection(customClass.name);
+
     const { result } = await newCollection.insertMany(data);
 
     console.log('Successfully inserted documents');
@@ -47,32 +46,7 @@ Parse.Cloud.define('importcsv', async req => {
   } catch (err) {
     console.log(err);
     return { success: false, ...err, message: err.message };
+  } finally {
+    mongoClient.close();
   }
-});
-
-Parse.Cloud.define('parseimport', async req => {
-  try {
-    const { customClassName, csvData } = req.params;
-
-    const data = await parseCsv(csvData);
-
-    const CustomClass = Parse.Object.extend(customClassName);
-
-    const customClassInstances = [];
-
-    data.forEach(record => {
-      const customClass = new CustomClass();
-
-      for (const [column, value] of Object.entries(record)) {
-        customClass.set(column, value);
-      }
-
-      customClassInstances.push(customClass.save());
-    });
-
-    await Promise.all(customClassInstances);
-  } catch (err) {
-    console.log(err);
-    return { success: false, ...err, message: err.message };
-  }
-});
+};
